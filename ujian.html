@@ -11,9 +11,7 @@
         #pdf-container { height: calc(100dvh - 80px); }
         #pdf-viewer { 
             background-color: #020617; 
-            display: flex; 
-            justify-content: center; 
-            align-items: flex-start;
+            display: block;
             overflow: auto;
             padding: 16px;
             width: 100%;
@@ -24,7 +22,6 @@
             margin: 0 auto;
             width: auto;
             height: auto;
-            max-height: none;
         }
         /* Custom Scrollbar untuk tampilan komik */
         ::-webkit-scrollbar { width: 8px; }
@@ -107,8 +104,8 @@
             </div>
 
             <!-- PDF Viewer menggunakan PDF.js -->
-            <div id="pdf-viewer" class="w-full h-full border-none flex justify-center items-center overflow-auto">
-                <canvas id="pdf-canvas" class="max-w-full h-auto"></canvas>
+            <div id="pdf-viewer" class="w-full h-full border-none overflow-auto">
+                <canvas id="pdf-canvas"></canvas>
             </div>
 
             <script>
@@ -151,28 +148,25 @@
                         const page = await pdfDoc.getPage(pageNum);
                         const viewer = document.getElementById('pdf-viewer');
                         
-                        // Fit-to-width: hitung scale agar PDF pas dengan lebar container
+                        // Hitung scale untuk fit-to-width dengan padding
                         const padding = 32;
                         const containerWidth = viewer.clientWidth - padding;
                         
                         // Dapatkan viewport asli PDF
                         const baseViewport = page.getViewport({ scale: 1 });
                         
-                        // Scale agar PDF width = container width
+                        // Scale agar PDF width sesuai container width
                         let scale = containerWidth / baseViewport.width;
                         
-                        // Terapkan zoom user sebagai multiplier
+                        // Terapkan zoom user
                         scale = scale * (currentZoom / 100);
-                        
-                        // Minimum scale untuk tetap readable
-                        scale = Math.max(scale, 0.6);
                         
                         const viewport = page.getViewport({ scale });
                         
                         const canvas = document.getElementById('pdf-canvas');
                         const context = canvas.getContext('2d');
                         
-                        // Gunakan devicePixelRatio untuk rendering yang lebih tajam
+                        // Gunakan devicePixelRatio untuk rendering tajam
                         const dpr = window.devicePixelRatio || 1;
                         canvas.width = viewport.width * dpr;
                         canvas.height = viewport.height * dpr;
