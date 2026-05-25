@@ -28,11 +28,13 @@ function enterFullscreen() {
     }
 }
 
-// Minta Fullscreen pada interaksi pertama (karena kebijakan browser)
-document.addEventListener('click', function initFullscreen() {
+// Fungsi untuk memulai ujian dan memicu fullscreen
+function startExamNow() {
     enterFullscreen();
-    document.removeEventListener('click', initFullscreen);
-}, { once: true });
+    const startModal = document.getElementById('startModal');
+    if (startModal) startModal.classList.add('hidden');
+}
+window.startExamNow = startExamNow;
 
 // Timer Logic (90 Menit)
 let timeLeft = 90 * 60;
@@ -71,9 +73,14 @@ document.addEventListener("visibilitychange", () => {
 // 2. Deteksi Keluar Fullscreen
 const handleFullscreenChange = () => {
     const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
-    const isRetokenModalHidden = document.getElementById('retokenModal').classList.contains('hidden');
+    const retokenModal = document.getElementById('retokenModal');
+    const startModal = document.getElementById('startModal');
+    
+    const isRetokenModalHidden = retokenModal ? retokenModal.classList.contains('hidden') : true;
+    const isStartModalHidden = startModal ? startModal.classList.contains('hidden') : true;
 
-    if (!isFullscreen && isRetokenModalHidden) triggerViolation();
+    // Hanya trigger violation jika bukan di awal ujian dan sedang tidak memproses re-token
+    if (!isFullscreen && isRetokenModalHidden && isStartModalHidden) triggerViolation();
 };
 
 document.addEventListener("fullscreenchange", handleFullscreenChange);
