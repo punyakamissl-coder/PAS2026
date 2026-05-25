@@ -84,7 +84,7 @@
                     </button>
                     
                     <div class="flex items-center gap-1 bg-slate-950 px-2 py-1 rounded border border-slate-700">
-                        <input type="number" id="zoomInput" value="130" step="25" min="50" max="300" onchange="jumpToZoom()" class="bg-transparent text-white w-10 text-center text-xs md:text-sm outline-none font-bold">
+                        <input type="number" id="zoomInput" value="100" step="25" min="50" max="300" onchange="jumpToZoom()" class="bg-transparent text-white w-10 text-center text-xs md:text-sm outline-none font-bold">
                         <span class="text-slate-500 text-[10px] uppercase font-bold tracking-tighter">%</span>
                     </div>
 
@@ -115,7 +115,7 @@
                 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
                 const currentMapel = localStorage.getItem('currentSubject');
-                let currentZoom = 130; // Default zoom lebih besar untuk readability
+                let currentZoom = 100; // Zoom standar untuk fit-to-width
                 let pdfDoc = null;
                 let currentPage = 1;
                 let pdfUrl = "";
@@ -151,21 +151,21 @@
                         const page = await pdfDoc.getPage(pageNum);
                         const viewer = document.getElementById('pdf-viewer');
                         
-                        // Hitung skala untuk fit ke container width dengan zoom user
+                        // Fit-to-width: hitung scale agar PDF pas dengan lebar container
                         const padding = 32;
-                        const maxWidth = Math.max(viewer.clientWidth - padding, 400);
+                        const containerWidth = viewer.clientWidth - padding;
                         
                         // Dapatkan viewport asli PDF
                         const baseViewport = page.getViewport({ scale: 1 });
                         
-                        // Hitung skala agar PDF sesuai dengan lebar container
-                        let scale = maxWidth / baseViewport.width;
+                        // Scale agar PDF width = container width
+                        let scale = containerWidth / baseViewport.width;
                         
-                        // Terapkan zoom user
+                        // Terapkan zoom user sebagai multiplier
                         scale = scale * (currentZoom / 100);
                         
-                        // Batasi scale minimum untuk tetap readable
-                        scale = Math.max(scale, 0.7);
+                        // Minimum scale untuk tetap readable
+                        scale = Math.max(scale, 0.6);
                         
                         const viewport = page.getViewport({ scale });
                         
