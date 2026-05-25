@@ -5,25 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ujian Berlangsung</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <style>
         body { user-select: none; -webkit-user-select: none; }
         #pdf-container { height: calc(100dvh - 80px); }
         #pdf-viewer { 
-            background-color: #020617; 
-            display: block;
-            overflow: auto;
-            padding: 16px;
             width: 100%;
             height: 100%;
+            border: none;
         }
-        #pdf-canvas {
-            display: block;
-            margin: 0 auto;
-            width: auto;
-            height: auto;
-        }
-        /* Custom Scrollbar untuk tampilan komik */
+        /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #020617; }
         ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
@@ -59,37 +49,10 @@
             <!-- PDF Reader Toolbar -->
             <div class="bg-slate-800 border-b border-slate-700 px-2 py-1.5 md:px-4 md:py-2 flex items-center justify-between min-h-[48px]">
                 <div class="flex items-center gap-2">
-                    <button onclick="previousPage()" class="p-2 md:p-1.5 hover:bg-slate-700 rounded text-slate-300 transition" title="Halaman Sebelumnya">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
-                    </button>
-
                     <div class="flex items-center gap-1 bg-slate-950 px-2 py-1 rounded border border-slate-700">
                         <input type="number" id="pageInput" value="1" min="1" onchange="jumpToPage()" class="bg-transparent text-white w-8 text-center text-xs md:text-sm outline-none font-bold">
                         <span class="text-slate-500 text-[10px] uppercase font-bold tracking-tighter">/ <span id="totalPages">0</span></span>
                     </div>
-
-                    <button onclick="nextPage()" class="p-2 md:p-1.5 hover:bg-slate-700 rounded text-slate-300 transition" title="Halaman Berikutnya">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
-                    </button>
-
-                    <div class="border-l border-slate-700 mx-1"></div>
-
-                    <button onclick="changeZoom(-25)" class="p-2 md:p-1.5 hover:bg-slate-700 rounded text-slate-300 transition" title="Zoom Out">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" clip-rule="evenodd" />
-                        </svg>
-                    </button>
-                    
-                    <div class="flex items-center gap-1 bg-slate-950 px-2 py-1 rounded border border-slate-700">
-                        <input type="number" id="zoomInput" value="100" step="25" min="50" max="300" onchange="jumpToZoom()" class="bg-transparent text-white w-10 text-center text-xs md:text-sm outline-none font-bold">
-                        <span class="text-slate-500 text-[10px] uppercase font-bold tracking-tighter">%</span>
-                    </div>
-
-                    <button onclick="changeZoom(25)" class="p-2 md:p-1.5 hover:bg-slate-700 rounded text-slate-300 transition" title="Zoom In">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
-                        </svg>
-                    </button>
                 </div>
 
                 <div class="hidden lg:flex items-center gap-4 text-slate-500 text-[10px] font-bold uppercase tracking-widest">
@@ -103,18 +66,12 @@
                 </div>
             </div>
 
-            <!-- PDF Viewer menggunakan PDF.js -->
-            <div id="pdf-viewer" class="w-full h-full border-none overflow-auto">
-                <canvas id="pdf-canvas"></canvas>
-            </div>
+            <!-- PDF Viewer menggunakan Native Embed -->
+            <embed id="pdf-viewer" type="application/pdf" class="w-full h-full">
+            
 
             <script>
-                pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-
                 const currentMapel = localStorage.getItem('currentSubject');
-                let currentZoom = 100; // Zoom standar untuk fit-to-width
-                let pdfDoc = null;
-                let currentPage = 1;
                 let pdfUrl = "";
 
                 if (typeof getSubjectInfo === 'function') {
@@ -122,107 +79,21 @@
                     if (subjectInfo && subjectInfo.pdf) {
                         pdfUrl = `soal/${subjectInfo.pdf}`;
                         document.getElementById('pdfFileName').innerText = `SOAL: ${subjectInfo.name}`;
-                        loadPDF(pdfUrl);
-                    }
-                }
-
-                async function loadPDF(url) {
-                    try {
-                        pdfDoc = await pdfjsLib.getDocument(url).promise;
-                        document.getElementById('totalPages').innerText = pdfDoc.numPages;
-                        renderPage(currentPage);
-                    } catch (error) {
-                        console.error('Error loading PDF:', error);
-                        document.getElementById('pdf-viewer').innerHTML = '<p class="text-red-500">Error membuka PDF. Pastikan file ada di folder soal/</p>';
-                    }
-                }
-
-                async function renderPage(pageNum) {
-                    if (!pdfDoc) return;
-                    if (pageNum < 1 || pageNum > pdfDoc.numPages) return;
-                    
-                    currentPage = pageNum;
-                    document.getElementById('pageInput').value = currentPage;
-
-                    try {
-                        const page = await pdfDoc.getPage(pageNum);
-                        const viewer = document.getElementById('pdf-viewer');
+                        document.getElementById('pdf-viewer').src = pdfUrl;
                         
-                        // Hitung scale untuk fit-to-width dengan padding
-                        const padding = 32;
-                        const containerWidth = viewer.clientWidth - padding;
-                        
-                        // Dapatkan viewport asli PDF
-                        const baseViewport = page.getViewport({ scale: 1 });
-                        
-                        // Scale agar PDF width sesuai container width
-                        let scale = containerWidth / baseViewport.width;
-                        
-                        // Terapkan zoom user
-                        scale = scale * (currentZoom / 100);
-                        
-                        const viewport = page.getViewport({ scale });
-                        
-                        const canvas = document.getElementById('pdf-canvas');
-                        const context = canvas.getContext('2d');
-                        
-                        // Gunakan devicePixelRatio untuk rendering tajam
-                        const dpr = window.devicePixelRatio || 1;
-                        canvas.width = viewport.width * dpr;
-                        canvas.height = viewport.height * dpr;
-                        canvas.style.width = viewport.width + 'px';
-                        canvas.style.height = viewport.height + 'px';
-                        
-                        context.scale(dpr, dpr);
-                        
-                        await page.render({
-                            canvasContext: context,
-                            viewport: viewport
-                        }).promise;
-                    } catch (error) {
-                        console.error('Error rendering page:', error);
-                    }
-                }
-
-                function nextPage() {
-                    if (pdfDoc && currentPage < pdfDoc.numPages) {
-                        renderPage(currentPage + 1);
-                    }
-                }
-
-                function previousPage() {
-                    if (currentPage > 1) {
-                        renderPage(currentPage - 1);
+                        // Tampilkan total halaman (hardcoded jika tidak bisa auto-detect)
+                        document.getElementById('totalPages').innerText = '?';
                     }
                 }
 
                 function jumpToPage() {
                     const input = document.getElementById('pageInput');
-                    const pageNum = Math.min(Math.max(1, parseInt(input.value) || 1), pdfDoc ? pdfDoc.numPages : 1);
-                    renderPage(pageNum);
+                    const pageNum = parseInt(input.value) || 1;
+                    // Native PDF viewer akan handle navigasi ke halaman tertentu via #page=X
+                    if (pdfUrl) {
+                        document.getElementById('pdf-viewer').src = `${pdfUrl}#page=${pageNum}`;
+                    }
                 }
-
-                function changeZoom(delta) {
-                    if (!pdfDoc) return;
-                    currentZoom = Math.min(Math.max(50, currentZoom + delta), 300);
-                    updateViewer();
-                }
-
-                function jumpToZoom() {
-                    const input = document.getElementById('zoomInput');
-                    currentZoom = Math.min(Math.max(50, parseInt(input.value) || 100), 300);
-                    updateViewer();
-                }
-
-                function updateViewer() {
-                    renderPage(currentPage);
-                    document.getElementById('zoomInput').value = currentZoom;
-                }
-
-                // Handle resize untuk responsif
-                window.addEventListener('resize', () => {
-                    renderPage(currentPage);
-                });
             </script>
         </div>
     </div>
@@ -267,3 +138,4 @@
     <script src="exam.js"></script>
 </body>
 </html>
+
