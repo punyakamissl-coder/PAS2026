@@ -5,10 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ujian Berlangsung</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <style>
         body { user-select: none; -webkit-user-select: none; }
         #pdf-container { height: calc(100dvh - 80px); }
-        iframe { background-color: #020617; }
+        #pdf-viewer { background-color: #020617; display: flex; justify-content: center; align-items: center; }
         /* Custom Scrollbar untuk tampilan komik */
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #020617; }
@@ -74,25 +75,62 @@
                 </div>
             </div>
 
-            <!-- Tampilan Komik menggunakan Iframe Native -->
-            <iframe id="comic-viewer" src="" class="w-full h-full border-none" allow="autoplay"></iframe>
+            <!-- PDF Viewer menggunakan PDF.js -->
+            <div id="pdf-viewer" class="w-full h-full border-none flex justify-center items-center overflow-auto">
+                <canvas id="pdf-canvas" class="max-w-full h-auto"></canvas>
+            </div>
 
             <script>
+                pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
                 const currentMapel = localStorage.getItem('currentSubject');
                 let currentZoom = 100;
-                let pdfBaseUrl = "";
+                let pdfDoc = null;
+                let currentPage = 1;
+                let pdfUrl = "";
 
                 if (typeof getSubjectInfo === 'function') {
                     const subjectInfo = getSubjectInfo(currentMapel);
                     if (subjectInfo && subjectInfo.pdf) {
-                        pdfBaseUrl = `soal/${subjectInfo.pdf}#toolbar=0&navpanes=0&scrollbar=1&statusbar=0&messages=0`;
-                        document.getElementById('comic-viewer').src = `${pdfBaseUrl}&page=1&zoom=100`;
+                        pdfUrl = `soal/${subjectInfo.pdf}`;
                         document.getElementById('pdfFileName').innerText = `SOAL: ${subjectInfo.name}`;
+                        loadPDF(pdfUrl);
+                    }
+                }
+
+                async function loadPDF(url) {
+                    try {
+                        pdfDoc = await pdfjsLib.getDocument(url).promise;
+                        renderPage(currentPage);
+                    } catch (error) {
+                        console.error('Error loading PDF:', error);
+                        document.getElementById('pdf-viewer').innerHTML = '<p class="text-red-500">Error membuka PDF. Pastikan file ada di folder soal/</p>';
+                    }
+                }
+
+                async function renderPage(pageNum) {
+                    if (!pdfDoc) return;
+                    try {
+                        const page = await pdfDoc.getPage(pageNum);
+                        const scale = currentZoom / 100;
+                        const viewport = page.getViewport({ scale: scale * 1.5 });
+                        
+                        const canvas = document.getElementById('pdf-canvas');
+                        const context = canvas.getContext('2d');
+                        canvas.width = viewport.width;
+                        canvas.height = viewport.height;
+                        
+                        await page.render({
+                            canvasContext: context,
+                            viewport: viewport
+                        }).promise;
+                    } catch (error) {
+                        console.error('Error rendering page:', error);
                     }
                 }
 
                 function changeZoom(delta) {
-                    if (!pdfBaseUrl) return;
+                    if (!pdfDoc) return;
                     currentZoom = Math.min(Math.max(50, currentZoom + delta), 300);
                     updateViewer();
                 }
@@ -104,8 +142,7 @@
                 }
 
                 function updateViewer() {
-                    const viewer = document.getElementById('comic-viewer');
-                    viewer.src = `${pdfBaseUrl}&zoom=${currentZoom}`;
+                    renderPage(currentPage);
                     document.getElementById('zoomInput').value = currentZoom;
                 }
             </script>
