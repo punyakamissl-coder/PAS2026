@@ -9,7 +9,22 @@
     <style>
         body { user-select: none; -webkit-user-select: none; }
         #pdf-container { height: calc(100dvh - 80px); }
-        #pdf-viewer { background-color: #020617; display: flex; justify-content: center; align-items: center; }
+        #pdf-viewer { 
+            background-color: #020617; 
+            display: flex; 
+            justify-content: center; 
+            align-items: flex-start;
+            overflow: auto;
+            padding: 16px;
+            width: 100%;
+            height: 100%;
+        }
+        #pdf-canvas {
+            display: block;
+            margin: 0 auto;
+            max-width: 100%;
+            height: auto;
+        }
         /* Custom Scrollbar untuk tampilan komik */
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #020617; }
@@ -133,8 +148,16 @@
 
                     try {
                         const page = await pdfDoc.getPage(pageNum);
-                        const scale = currentZoom / 100;
-                        const viewport = page.getViewport({ scale: scale * 1.5 });
+                        const viewer = document.getElementById('pdf-viewer');
+                        
+                        // Hitung skala berdasarkan lebar container
+                        const maxWidth = viewer.clientWidth - 32; // 32px padding
+                        const initialViewport = page.getViewport({ scale: 1 });
+                        const containerScale = maxWidth / initialViewport.width;
+                        
+                        // Gabungkan dengan zoom user
+                        const finalScale = (currentZoom / 100) * containerScale;
+                        const viewport = page.getViewport({ scale: finalScale });
                         
                         const canvas = document.getElementById('pdf-canvas');
                         const context = canvas.getContext('2d');
@@ -184,6 +207,11 @@
                     renderPage(currentPage);
                     document.getElementById('zoomInput').value = currentZoom;
                 }
+
+                // Handle resize untuk responsif
+                window.addEventListener('resize', () => {
+                    renderPage(currentPage);
+                });
             </script>
         </div>
     </div>
